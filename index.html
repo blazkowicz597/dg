@@ -10,8 +10,8 @@
 <style>
   :root {
     /* Masaüstünden mobile kadar uyumlu boyutlar */
-    --gift-size: clamp(96px, 20vw, 160px);
-    --glow-size: calc(var(--gift-size) + 40px);
+    --gift-size: clamp(80px, 16vw, 128px);
+    --glow-size: calc(var(--gift-size) + 32px);
     --heading-size: clamp(22px, 4.5vw, 36px);
   }
   body {
@@ -102,8 +102,8 @@
   /* Telefonlar için ince ayar */
   @media (max-width: 480px) {
     :root {
-      --gift-size: clamp(88px, 24vw, 140px);
-      --glow-size: calc(var(--gift-size) + 36px);
+      --gift-size: clamp(68px, 20vw, 112px);
+      --glow-size: calc(var(--gift-size) + 28px);
       --heading-size: clamp(20px, 6vw, 28px);
     }
     body { padding: 8px; }
@@ -329,4 +329,3 @@
 </script>
 </body>
 </html>
-
