@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doğum Günü Sürprizi 🎂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Masaüstünden mobile kadar uyumlu boyutlar */
+    --gift-size: clamp(96px, 20vw, 160px);
+    --glow-size: calc(var(--gift-size) + 40px);
+    --heading-size: clamp(22px, 4.5vw, 36px);
+  }
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(150deg, rgb(38, 36, 209), rgb(180, 0, 0));
+    height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    position: relative;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  h1 {
+    font-size: var(--heading-size);
+    margin-bottom: 10px;
+    z-index: 2;
+  }
+
+  .gift {
+    display: inline-block;
+    font-size: 0;
+    cursor: pointer;
+    margin: 15px;
+    transition: transform 0.3s;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    line-height: 1;
+    width: var(--gift-size);
+    height: var(--gift-size);
+    background-image: url('gbox.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: relative;
+    will-change: transform, opacity;
+  }
+
+  .gift:hover { transform: scale(1.3); }
+
+  .gift:focus-visible {
+    outline: 3px solid rgba(255,255,255,0.9);
+    outline-offset: 4px;
+    transform: scale(1.15);
+  }
+
+  /* Renkli glow: kan kırmızısı ve gece mavisi */
+  .gift::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--glow-size);
+    height: var(--glow-size);
+    transform: translate(-50%, -50%);
+    background:
+      radial-gradient(closest-side, rgba(139, 0, 0, 0.55), rgba(139, 0, 0, 0) 70%) 25% 60% / 70% 70% no-repeat,
+      radial-gradient(closest-side, rgba(25, 25, 112, 0.55), rgba(25, 25, 112, 0) 70%) 75% 40% / 70% 70% no-repeat;
+    filter: blur(16px);
+    opacity: 1;
+    pointer-events: none;
+    z-index: -1;
+    border-radius: 16px;
+  }
+
+  /* Küçük ekranlarda satır kırımı ve kenar boşlukları */
+  #gifts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 12px;
+  }
+
+  /* Dokunmatik cihazlarda hover büyütmeyi devre dışı bırak */
+  @media (hover: none) {
+    .gift:hover { transform: none; }
+    .gift:focus-visible { transform: none; }
+  }
+
+  /* Telefonlar için ince ayar */
+  @media (max-width: 480px) {
+    :root {
+      --gift-size: clamp(88px, 24vw, 140px);
+      --glow-size: calc(var(--gift-size) + 36px);
+      --heading-size: clamp(20px, 6vw, 28px);
+    }
+    body { padding: 8px; }
+    #gifts { gap: 8px 10px; }
+    #message { font-size: 20px; min-height: 90px; }
+  }
+
+  #message {
+    margin-top: 20px;
+    font-size: 26px;
+    line-height: 1.6;
+    max-width: 90%;
+    min-height: 100px;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    z-index: 2;
+  }
+
+  .stars {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  /* İçerik konteynerini tam ortala */
+  #game {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .star {
+    position: absolute;
+    background: white;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    opacity: 0.8;
+    animation: twinkle 2s infinite ease-in-out;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.5); }
+  }
+
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star { animation: none; }
+    .gift { transition: none; }
+    #message { transition: none; }
+  }
+
+  /* Yukarı doğru bozulma (warp) animasyonu */
+  @keyframes giftWarp {
+    0% {
+      transform: translateY(0) scale(1) skewY(0deg) rotate(0deg);
+      filter: blur(0px);
+      opacity: 1;
+    }
+    60% {
+      transform: translateY(-24px) scale(0.95) skewY(-6deg);
+      filter: blur(1px);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-72px) scale(0.85) skewY(8deg);
+      filter: blur(2px);
+      opacity: 0;
+    }
+  }
+
+  .gift.warp {
+    animation: giftWarp 600ms cubic-bezier(.2,.8,.2,1) forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gift.warp { animation-duration: 200ms; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div id="game">
+  <h1>Doğum Günün Kutlu Olsun! 🎉</h1>
+  <div id="gifts">
+    <button class="gift" type="button" aria-label="Hediye 1"></button>
+    <button class="gift" type="button" aria-label="Hediye 2"></button>
+    <button class="gift" type="button" aria-label="Hediye 3"></button>
+    <button class="gift" type="button" aria-label="Hediye 4"></button>
+    <button class="gift" type="button" aria-label="Hediye 5"></button>
+  </div>
+  <div id="message" aria-live="polite" aria-atomic="true"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+  // ⭐ Yıldız efekti
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const starsContainer = document.getElementById("stars");
+  const starCount = reducedMotion ? 30 : 60;
+  for (let i = 0; i < starCount; i++) {
+    const star = document.createElement("div");
+    star.classList.add("star");
+    star.style.top = Math.random() * 100 + "%";
+    star.style.left = Math.random() * 100 + "%";
+    if (!reducedMotion) {
+      star.style.animationDelay = Math.random() * 2 + "s";
+    }
+    starsContainer.appendChild(star);
+  }
+
+  // 🎁 Mesajlar
+  const messages = [
+    "🎈 Sen doğduğun gün, dünya daha güzel oldu. Her anın mutlulukla dolsun.",
+    "💫 Gülüşün etrafındaki herkese ışık saçıyor. İyi ki varsın!",
+    "❤️ Yeni yaşın sana bolca neşe, sağlık ve kahkaha getirsin.",
+    "🌸 Her yaşında daha da güzelleşiyorsun. Seninle olmak bir şans.",
+    "🎁 Bu özel gününde kalbinin tüm dilekleri gerçek olsun. Mutlu yıllar!"
+  ];
+
+  const gifts = document.querySelectorAll(".gift");
+  const messageBox = document.getElementById("message");
+
+  let clickedCount = 0;
+  let isAnimating = false;
+
+  gifts.forEach((gift, index) => {
+    gift.addEventListener("click", () => {
+      if (isAnimating || gift.style.visibility === "hidden") return;
+      isAnimating = true;
+
+      // 🎯 Kutunun ekrandaki konumunu al
+      const rect = gift.getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+      // 🎉 Konfeti kutunun tam konumundan çıksın (hareket azaltma tercihi varsa azalt)
+      if (!reducedMotion) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { x: x, y: y },
+        });
+      } else {
+        confetti({
+          particleCount: 20,
+          spread: 45,
+          origin: { x: x, y: y },
+        });
+      }
+
+      // Mesaj gösterimi (hareket azaltma tercihi varsa geçişsiz)
+      if (!reducedMotion) {
+        messageBox.style.opacity = "0";
+        setTimeout(() => {
+          messageBox.innerText = messages[index];
+          messageBox.style.opacity = "1";
+        }, 150);
+      } else {
+        messageBox.style.opacity = "1";
+        messageBox.innerText = messages[index];
+      }
+
+      // Mesaj gizleme zamanlaması
+      setTimeout(() => {
+        if (!reducedMotion) {
+          messageBox.style.opacity = "0";
+        }
+        isAnimating = false;
+      }, 3000);
+
+      // Kutuyu gizle
+      gift.style.visibility = "hidden";
+      clickedCount++;
+
+      // Son hediye tıklanınca YouTube'a yönlendir
+      if (clickedCount === gifts.length) {
+        setTimeout(() => {
+          let duration = 3000;
+          let end = Date.now() + duration;
+          if (!reducedMotion) {
+            (function frame() {
+              confetti({
+                particleCount: 5,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                shapes: ['heart'],
+                gravity: 0.4
+              });
+              confetti({
+                particleCount: 5,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                shapes: ['heart'],
+                gravity: 0.4
+              });
+              if (Date.now() < end) requestAnimationFrame(frame);
+            })();
+          }
+
+          setTimeout(() => {
+            window.location.href = "https://www.youtube.com/watch?v=fbOqBGHtAeg&list=RDfbOqBGHtAeg&start_radio=1";
+          }, 3000);
+        }, 1000);
+      }
+    });
+  });
+</script>
+</body>
+</html>
