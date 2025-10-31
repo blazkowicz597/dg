@@ -36,6 +36,23 @@
     z-index: 2;
   }
 
+  /* Basit buton stili */
+  .btn {
+    appearance: none;
+    border: 0;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:focus-visible { outline: 3px solid rgba(255,255,255,0.8); outline-offset: 3px; }
+
   .gift {
     display: inline-block;
     font-size: 0;
@@ -92,6 +109,30 @@
     justify-content: center;
     gap: 10px 12px;
   }
+
+  /* Final overlay */
+  #finalOverlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    z-index: 5;
+    padding: 16px;
+  }
+  #finalCard {
+    background: rgba(20, 20, 40, 0.8);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 18px 18px 14px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+  }
+  #countdown { font-size: 18px; opacity: 0.9; margin: 8px 0 12px; }
 
   /* Dokunmatik cihazlarda hover büyütmeyi devre dışı bırak */
   @media (hover: none) {
@@ -204,7 +245,10 @@
 <div class="stars" id="stars"></div>
 
 <div id="game">
-  <h1>Doğum Günün Kutlu Olsun! 🎉</h1>
+  <h1>Doğum Günün Kutlu Olsunnn Bitanemmm 🎉</h1>
+  <div>
+    <button id="restart" class="btn" type="button">Baştan Başlat</button>
+  </div>
   <div id="gifts">
     <button class="gift" type="button" aria-label="Hediye 1"></button>
     <button class="gift" type="button" aria-label="Hediye 2"></button>
@@ -212,6 +256,18 @@
   </div>
   <div id="message" aria-live="polite" aria-atomic="true"></div>
 </div>
+
+<!-- Final yönlendirme onayı / geri sayım overlay -->
+<div id="finalOverlay" role="dialog" aria-modal="true" aria-labelledby="finalTitle">
+  <div id="finalCard">
+    <div id="finalTitle" style="font-size:18px; font-weight:600;">Sürprizin finali geliyor güzelimmm 🎶</div>
+    <div id="countdown">6 saniye içinde müzik açılacak...</div>
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button id="stayBtn" class="btn" type="button">Burada Kal</button>
+      <button id="goNowBtn" class="btn" type="button">Hemen Git</button>
+    </div>
+  </div>
+  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
@@ -232,16 +288,23 @@
 
   // 🎁 Mesajlar
   const messages = [
-    "🎈 Sen doğduğun gün, dünya daha güzel oldu. Her anın mutlulukla dolsun.",
-    "💫 Gülüşün etrafındaki herkese ışık saçıyor. İyi ki varsın!",
-    "❤️ Yeni yaşın sana bolca neşe, sağlık ve kahkaha getirsin."
+    "İyi ki doğdun Gözdemmmmm, tüm hayatının her günü gülüşün kadar güzel geçsin.❤️❤️❤️",
+    "Gülüşün dünyamı aydınlatıyor. Seni çok seviyorummmm İyi ki varsın💖💗🥰💞",
+    "Yeni yaşın sana huzur, sevgi ve unutulmaz anılar getirsin Gözdem, bende bu sırada senin sevgine layık olacağımm ömrümm.🎉🎉🎉"
   ];
 
   const gifts = document.querySelectorAll(".gift");
   const messageBox = document.getElementById("message");
+  const restartBtn = document.getElementById("restart");
+  const finalOverlay = document.getElementById("finalOverlay");
+  const countdownEl = document.getElementById("countdown");
+  const stayBtn = document.getElementById("stayBtn");
+  const goNowBtn = document.getElementById("goNowBtn");
 
   let clickedCount = 0;
   let isAnimating = false;
+  let redirectTimer = null;
+  let countdownTimer = null;
 
   gifts.forEach((gift, index) => {
     gift.addEventListener("click", () => {
@@ -268,63 +331,90 @@
         });
       }
 
-      // Mesaj gösterimi (hareket azaltma tercihi varsa geçişsiz)
+      // Mesaj gösterimi (hareket azaltma tercihi varsa geçişsiz) ve ekranda kalması
       if (!reducedMotion) {
         messageBox.style.opacity = "0";
         setTimeout(() => {
           messageBox.innerText = messages[index];
           messageBox.style.opacity = "1";
+          isAnimating = false;
         }, 150);
       } else {
         messageBox.style.opacity = "1";
         messageBox.innerText = messages[index];
-      }
-
-      // Mesaj gizleme zamanlaması
-      setTimeout(() => {
-        if (!reducedMotion) {
-          messageBox.style.opacity = "0";
-        }
         isAnimating = false;
-      }, 3000);
+      }
 
       // Kutuyu gizle
       gift.style.visibility = "hidden";
       clickedCount++;
 
-      // Son hediye tıklanınca YouTube'a yönlendir
+      // Son hediye tıklanınca 6 saniye beklemeden önce overlay göster
       if (clickedCount === gifts.length) {
-        setTimeout(() => {
-          let duration = 3000;
-          let end = Date.now() + duration;
-          if (!reducedMotion) {
-            (function frame() {
-              confetti({
-                particleCount: 5,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 },
-                shapes: ['heart'],
-                gravity: 0.4
-              });
-              confetti({
-                particleCount: 5,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 },
-                shapes: ['heart'],
-                gravity: 0.4
-              });
-              if (Date.now() < end) requestAnimationFrame(frame);
-            })();
-          }
-
-          setTimeout(() => {
-            window.location.href = "https://www.youtube.com/watch?v=fbOqBGHtAeg&list=RDfbOqBGHtAeg&start_radio=1";
-          }, 3000);
-        }, 1000);
+        showFinalOverlay();
       }
     });
+  });
+
+  function showFinalOverlay() {
+    finalOverlay.style.display = 'flex';
+    const totalMs = 6000;
+    const start = Date.now();
+    updateCountdown(totalMs);
+    // Konfeti akışı sürsün (tercih varsa)
+    if (!reducedMotion) {
+      (function frame() {
+        const remaining = totalMs - (Date.now() - start);
+        if (remaining > 0) {
+          confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, shapes: ['heart'], gravity: 0.4 });
+          confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, shapes: ['heart'], gravity: 0.4 });
+          requestAnimationFrame(frame);
+        }
+      })();
+    }
+    countdownTimer = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, totalMs - elapsed);
+      updateCountdown(remaining);
+      if (remaining <= 0) {
+        clearInterval(countdownTimer);
+      }
+    }, 100);
+    redirectTimer = setTimeout(() => {
+      window.location.href = "https://www.youtube.com/watch?v=fbOqBGHtAeg&list=RDfbOqBGHtAeg&start_radio=1";
+    }, totalMs);
+  }
+
+  function updateCountdown(ms) {
+    const s = Math.ceil(ms / 1000);
+    countdownEl.textContent = `${s} saniye içinde müzik açılacak...`;
+  }
+
+  function hideFinalOverlay() {
+    finalOverlay.style.display = 'none';
+  }
+
+  stayBtn.addEventListener('click', () => {
+    if (redirectTimer) clearTimeout(redirectTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    hideFinalOverlay();
+  });
+  goNowBtn.addEventListener('click', () => {
+    if (redirectTimer) clearTimeout(redirectTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    window.location.href = "https://www.youtube.com/watch?v=fbOqBGHtAeg&list=RDfbOqBGHtAeg&start_radio=1";
+  });
+
+  // Baştan başlat: tüm kutuları görünür yap, sayaçları ve mesajı sıfırla, bekleyen yönlendirmeyi iptal et
+  restartBtn.addEventListener('click', () => {
+    if (redirectTimer) clearTimeout(redirectTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    hideFinalOverlay();
+    clickedCount = 0;
+    isAnimating = false;
+    messageBox.style.opacity = '0';
+    messageBox.innerText = '';
+    gifts.forEach(g => { g.style.visibility = 'visible'; });
   });
 </script>
 </body>
