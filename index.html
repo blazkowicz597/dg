@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Doğum Günü Sürprizi 🎂</title>
+<title>GÖZDEME ÖZEL DOĞUM GÜNÜ SÜRPRİZİ 🎂</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
@@ -126,7 +126,7 @@
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: 16px;
     padding: 18px 18px 14px;
-    max-width: 420px;
+    max-width: 800px;
     width: 100%;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
@@ -265,8 +265,7 @@
     <div id="countdown">6 saniye içinde video açılacak...</div>
     <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
       <button id="stayBtn" class="btn" type="button">Burada Kal</button>
-      <button id="playHereBtn" class="btn" type="button">Burada Dinle</button>
-      <button id="goNowBtn" class="btn" type="button">Hemen Git</button>
+      <button id="goNowBtn" class="btn" type="button">youtube'de izlemeye git</button>
     </div>
     <div id="videoContainer" style="display:none; margin-top:12px; aspect-ratio:16/9; width:100%;">
       <iframe id="ytPlayer" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
@@ -305,7 +304,6 @@
   const countdownEl = document.getElementById("countdown");
   const stayBtn = document.getElementById("stayBtn");
   const goNowBtn = document.getElementById("goNowBtn");
-  const playHereBtn = document.getElementById("playHereBtn");
   const progressEl = document.getElementById("progress");
   const videoContainer = document.getElementById("videoContainer");
   const ytPlayer = document.getElementById("ytPlayer");
@@ -377,9 +375,7 @@
     finalOverlay.style.display = 'flex';
     // Odağı overlay içine al
     lastFocusedBeforeOverlay = document.activeElement;
-    setTimeout(() => {
-      (playHereBtn || stayBtn).focus();
-    }, 0);
+    setTimeout(() => { stayBtn.focus(); }, 0);
     const totalMs = 6000;
     const start = Date.now();
     updateCountdown(totalMs);
@@ -403,7 +399,7 @@
       }
     }, 100);
     redirectTimer = setTimeout(() => {
-      window.location.href = "https://www.youtube.com/watch?v=fbOqBGHtAeg&list=RDfbOqBGHtAeg&start_radio=1";
+      startInAppPlayback();
     }, totalMs);
   }
 
@@ -422,10 +418,10 @@
   function startInAppPlayback() {
     if (hasStartedPlayback) return;
     hasStartedPlayback = true;
-    const embedUrl = "https://www.youtube.com/embed/fbOqBGHtAeg?autoplay=1&rel=0&playsinline=1";
+    const embedUrl = "https://youtu.be/0l12yc8tcWs?si=nGmssbHyb76UGnyE";
     ytPlayer.src = embedUrl;
     videoContainer.style.display = 'block';
-    countdownEl.textContent = 'Müzik burada başladı, keyfini çıkar ❤️';
+    countdownEl.textContent = 'Videon burada başladı, keyfini çıkar güzelim ❤️';
   }
 
   stayBtn.addEventListener('click', () => {
@@ -433,15 +429,10 @@
     if (countdownTimer) clearInterval(countdownTimer);
     hideFinalOverlay();
   });
-  playHereBtn.addEventListener('click', () => {
-    if (redirectTimer) clearTimeout(redirectTimer);
-    if (countdownTimer) clearInterval(countdownTimer);
-    startInAppPlayback();
-  });
   goNowBtn.addEventListener('click', () => {
     if (redirectTimer) clearTimeout(redirectTimer);
     if (countdownTimer) clearInterval(countdownTimer);
-    window.location.href = "https://www.youtube.com/watch?v=fbOqBGHtAeg&list=RDfbOqBGHtAeg&start_radio=1";
+    window.location.href = "https://youtu.be/0l12yc8tcWs?si=nGmssbHyb76UGnyE";
   });
 
   // Overlay içinde klavye tuşları: ESC kapat, Tab tuşunu butonlar arasında döndür
@@ -452,7 +443,7 @@
       if (countdownTimer) clearInterval(countdownTimer);
       hideFinalOverlay();
     } else if (e.key === 'Tab') {
-      const focusables = [stayBtn, playHereBtn, goNowBtn].filter(Boolean);
+      const focusables = [stayBtn, goNowBtn].filter(Boolean);
       const idx = focusables.indexOf(document.activeElement);
       let nextIdx = idx;
       if (e.shiftKey) {
