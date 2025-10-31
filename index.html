@@ -254,17 +254,22 @@
     <button class="gift" type="button" aria-label="Hediye 2"></button>
     <button class="gift" type="button" aria-label="Hediye 3"></button>
   </div>
+  <div id="progress" style="font-size:14px; opacity:0.9; margin-top:4px; min-height:20px;"></div>
   <div id="message" aria-live="polite" aria-atomic="true"></div>
 </div>
 
 <!-- Final yönlendirme onayı / geri sayım overlay -->
 <div id="finalOverlay" role="dialog" aria-modal="true" aria-labelledby="finalTitle">
   <div id="finalCard">
-    <div id="finalTitle" style="font-size:18px; font-weight:600;">Sürprizin finali geliyor güzelimmm 🎶</div>
-    <div id="countdown">6 saniye içinde müzik açılacak...</div>
-    <div style="display:flex; gap:10px; justify-content:center;">
+    <div id="finalTitle" style="font-size:18px; font-weight:600;">Asıl Sürprizin geliyor güzelimmm </div>
+    <div id="countdown">6 saniye içinde video açılacak...</div>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
       <button id="stayBtn" class="btn" type="button">Burada Kal</button>
+      <button id="playHereBtn" class="btn" type="button">Burada Dinle</button>
       <button id="goNowBtn" class="btn" type="button">Hemen Git</button>
+    </div>
+    <div id="videoContainer" style="display:none; margin-top:12px; aspect-ratio:16/9; width:100%;">
+      <iframe id="ytPlayer" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>
   </div>
   </div>
@@ -300,11 +305,22 @@
   const countdownEl = document.getElementById("countdown");
   const stayBtn = document.getElementById("stayBtn");
   const goNowBtn = document.getElementById("goNowBtn");
+  const playHereBtn = document.getElementById("playHereBtn");
+  const progressEl = document.getElementById("progress");
+  const videoContainer = document.getElementById("videoContainer");
+  const ytPlayer = document.getElementById("ytPlayer");
 
   let clickedCount = 0;
   let isAnimating = false;
   let redirectTimer = null;
   let countdownTimer = null;
+  let hasStartedPlayback = false;
+  let lastFocusedBeforeOverlay = null;
+
+  function updateProgress() {
+    progressEl.textContent = `${clickedCount}/${gifts.length} hediye açıldı`;
+  }
+  updateProgress();
 
   gifts.forEach((gift, index) => {
     gift.addEventListener("click", () => {
@@ -348,6 +364,7 @@
       // Kutuyu gizle
       gift.style.visibility = "hidden";
       clickedCount++;
+      updateProgress();
 
       // Son hediye tıklanınca 6 saniye beklemeden önce overlay göster
       if (clickedCount === gifts.length) {
@@ -358,6 +375,11 @@
 
   function showFinalOverlay() {
     finalOverlay.style.display = 'flex';
+    // Odağı overlay içine al
+    lastFocusedBeforeOverlay = document.activeElement;
+    setTimeout(() => {
+      (playHereBtn || stayBtn).focus();
+    }, 0);
     const totalMs = 6000;
     const start = Date.now();
     updateCountdown(totalMs);
@@ -387,11 +409,23 @@
 
   function updateCountdown(ms) {
     const s = Math.ceil(ms / 1000);
-    countdownEl.textContent = `${s} saniye içinde müzik açılacak...`;
+    countdownEl.textContent = `${s} saniye içinde videon açılacak...`;
   }
 
   function hideFinalOverlay() {
     finalOverlay.style.display = 'none';
+    if (lastFocusedBeforeOverlay && typeof lastFocusedBeforeOverlay.focus === 'function') {
+      lastFocusedBeforeOverlay.focus();
+    }
+  }
+
+  function startInAppPlayback() {
+    if (hasStartedPlayback) return;
+    hasStartedPlayback = true;
+    const embedUrl = "https://www.youtube.com/embed/fbOqBGHtAeg?autoplay=1&rel=0&playsinline=1";
+    ytPlayer.src = embedUrl;
+    videoContainer.style.display = 'block';
+    countdownEl.textContent = 'Müzik burada başladı, keyfini çıkar ❤️';
   }
 
   stayBtn.addEventListener('click', () => {
@@ -399,10 +433,54 @@
     if (countdownTimer) clearInterval(countdownTimer);
     hideFinalOverlay();
   });
+  playHereBtn.addEventListener('click', () => {
+    if (redirectTimer) clearTimeout(redirectTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    startInAppPlayback();
+  });
   goNowBtn.addEventListener('click', () => {
     if (redirectTimer) clearTimeout(redirectTimer);
     if (countdownTimer) clearInterval(countdownTimer);
     window.location.href = "https://www.youtube.com/watch?v=fbOqBGHtAeg&list=RDfbOqBGHtAeg&start_radio=1";
+  });
+
+  // Overlay içinde klavye tuşları: ESC kapat, Tab tuşunu butonlar arasında döndür
+  finalOverlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (redirectTimer) clearTimeout(redirectTimer);
+      if (countdownTimer) clearInterval(countdownTimer);
+      hideFinalOverlay();
+    } else if (e.key === 'Tab') {
+      const focusables = [stayBtn, playHereBtn, goNowBtn].filter(Boolean);
+      const idx = focusables.indexOf(document.activeElement);
+      let nextIdx = idx;
+      if (e.shiftKey) {
+        nextIdx = (idx <= 0 ? focusables.length : idx) - 1;
+      } else {
+        nextIdx = (idx + 1) % focusables.length;
+      }
+      e.preventDefault();
+      focusables[nextIdx].focus();
+    }
+  });
+
+  // Hediye kutuları için klavyeyle gezinme (ok tuşları)
+  const giftsContainer = document.getElementById('gifts');
+  giftsContainer.addEventListener('keydown', (e) => {
+    const visibleGifts = Array.from(gifts).filter(g => g.style.visibility !== 'hidden');
+    const current = document.activeElement;
+    const idx = visibleGifts.indexOf(current);
+    if (idx === -1) return;
+    if (["ArrowRight", "ArrowDown"].includes(e.key)) {
+      e.preventDefault();
+      const next = visibleGifts[(idx + 1) % visibleGifts.length];
+      next.focus();
+    } else if (["ArrowLeft", "ArrowUp"].includes(e.key)) {
+      e.preventDefault();
+      const prev = visibleGifts[(idx - 1 + visibleGifts.length) % visibleGifts.length];
+      prev.focus();
+    }
   });
 
   // Baştan başlat: tüm kutuları görünür yap, sayaçları ve mesajı sıfırla, bekleyen yönlendirmeyi iptal et
@@ -415,6 +493,11 @@
     messageBox.style.opacity = '0';
     messageBox.innerText = '';
     gifts.forEach(g => { g.style.visibility = 'visible'; });
+    updateProgress();
+    // Video ve durumları sıfırla
+    if (ytPlayer) ytPlayer.src = '';
+    if (videoContainer) videoContainer.style.display = 'none';
+    hasStartedPlayback = false;
   });
 </script>
 </body>
