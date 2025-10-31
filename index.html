@@ -268,7 +268,7 @@
       <button id="goNowBtn" class="btn" type="button">youtube'de izlemeye git</button>
     </div>
     <div id="videoContainer" style="display:none; margin-top:12px; aspect-ratio:16/9; width:100%;">
-      <iframe id="ytPlayer" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+      <iframe id="ytPlayer" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="Sürpriz Video"></iframe>
     </div>
   </div>
   </div>
@@ -418,10 +418,18 @@
   function startInAppPlayback() {
     if (hasStartedPlayback) return;
     hasStartedPlayback = true;
-    const embedUrl = "https://www.youtube.com/embed/0l12yc8tcWs?autoplay=1&rel=0&playsinline=1";
+    const embedUrl = "https://www.youtube-nocookie.com/embed/0l12yc8tcWs?autoplay=1&mute=1&controls=1&rel=0&playsinline=1";
     ytPlayer.src = embedUrl;
     videoContainer.style.display = 'block';
     countdownEl.textContent = 'Videon burada başladı, keyfini çıkar güzelim ❤️';
+    // Yüklenme yedeği: 2 sn içinde yüklenmezse bilgilendir
+    let loaded = false;
+    ytPlayer.onload = () => { loaded = true; };
+    setTimeout(() => {
+      if (!loaded) {
+        countdownEl.textContent = 'Video burada yüklenemedi, dilersen YouTube\'da açabilirsin.';
+      }
+    }, 2000);
   }
 
   stayBtn.addEventListener('click', () => {
